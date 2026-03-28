@@ -24,11 +24,11 @@
   --font-display:"Cinzel",serif;
 }
 .dark {
-  --bg:#1a1410;--bg2:#221c15;--bg3:#2e251a;
-  --text:#e8e0d0;--text2:#b8a888;
-  --accent:#d4934a;--accent2:#e8b070;
-  --border:rgba(212,147,74,0.18);--nav-bg:rgba(26,20,16,0.97);
-  --mark-bg:rgba(212,147,74,0.30);--mark-current:rgba(212,147,74,0.65);
+  --bg:#121212;--bg2:#1e1e1e;--bg3:#2d2d2d;
+  --text:#e0e0e0;--text2:#a0a0a0;
+  --accent:#c49a6c;--accent2:#d4a373;
+  --border:rgba(196,154,108,0.2);--nav-bg:rgba(18,18,18,0.95);
+  --mark-bg:rgba(196,154,108,0.30);--mark-current:rgba(196,154,108,0.70);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--font-serif);background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.3s,color 0.3s}
@@ -68,7 +68,10 @@ p.ar-block{font-family:"Amiri","Scheherazade New","Traditional Arabic",serif;fon
 span.ar{font-family:"Amiri","Scheherazade New","Traditional Arabic",serif;font-size:1.2em;unicode-bidi:embed;direction:rtl}
 mark{background:var(--mark-bg);color:var(--text);border-radius:2px;padding:0 1px}
 mark.current-result{background:var(--mark-current);outline:2px solid var(--accent);outline-offset:1px}
-@media(max-width:700px){aside{display:none}.book-content{padding:32px 18px 60px}}
+#scrollTopBtn{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--bg2);color:var(--accent);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;opacity:0;visibility:hidden;transition:all 0.3s ease;z-index:99;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+#scrollTopBtn.visible{opacity:1;visibility:visible}
+#scrollTopBtn:hover{background:var(--accent);color:var(--bg)}
+@media(max-width:700px){aside{display:none}.book-content{padding:32px 18px 60px}#scrollTopBtn{bottom:16px;right:16px;width:38px;height:38px;font-size:1.2rem}}
 @media(min-width:701px){.toc-toggle{display:none!important}.toc-drawer{display:none!important}}
 </style>
 </head>
@@ -78,7 +81,7 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
     <div class="brand">GÜLMEHMET RİSALESİ</div>
     <div class="nav-controls">
       <div class="search-wrap">
-        <input id="searchInput" type="search" placeholder="Metinde ara…" autocomplete="off">
+        <input id="searchInput" type="search" dir="ltr" placeholder="Metinde ara…" autocomplete="off">
         <span class="search-count" id="searchCount" aria-live="polite"></span>
       </div>
       <button class="icon-btn" id="prevBtn" aria-label="Önceki">↑</button>
@@ -1411,6 +1414,7 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
     </div>
   </main>
 </div>
+<button id="scrollTopBtn" aria-label="Yukarı Çık">&#x2191;</button>
 <script>
 (function(){
   var reader=document.getElementById("reader");
@@ -1422,6 +1426,7 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   var darkBtn=document.getElementById("darkBtn");
   var tocToggle=document.getElementById("tocToggle");
   var tocDrawer=document.getElementById("tocDrawer");
+  var scrollTopBtn=document.getElementById("scrollTopBtn");
   var headings=document.querySelectorAll("h2[id],h3[id]");
   var navLinks=document.querySelectorAll("aside a,#tocDrawer a");
 
@@ -1458,6 +1463,16 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
       if(lt<vt+40) aside.scrollTop=lt-40;
       else if(lb>vb-40) aside.scrollTop=lb-aside.clientHeight+40;
     }
+
+    if(reader.scrollTop > 300) {
+      scrollTopBtn.classList.add("visible");
+    } else {
+      scrollTopBtn.classList.remove("visible");
+    }
+  });
+
+  scrollTopBtn.addEventListener("click", function(){
+    reader.scrollTo({top: 0, behavior: "smooth"});
   });
 
   navLinks.forEach(function(l){
