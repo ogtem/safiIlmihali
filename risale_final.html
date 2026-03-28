@@ -11,6 +11,11 @@
 <meta property="og:description" content="Gülmehmet Ögtem'in kaleme aldığı Şâfiî fıkhına dair kapsamlı cep ilmihali ve namaz hocası.">
 <meta property="og:type" content="book">
 <meta property="og:locale" content="tr_TR">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#f5f0e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="İlmihâl">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -86,6 +91,8 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
       </div>
       <button class="icon-btn" id="prevBtn" aria-label="Önceki">↑</button>
       <button class="icon-btn" id="nextBtn" aria-label="Sonraki">↓</button>
+      <button class="icon-btn" id="fontDecBtn" aria-label="Küçült" style="font-size:0.85rem">A-</button>
+      <button class="icon-btn" id="fontIncBtn" aria-label="Büyüt">A+</button>
       <button class="icon-btn toc-toggle" id="tocToggle" aria-label="İçindekiler">☰</button>
       <button class="icon-btn" id="darkBtn" aria-label="Tema">◑</button>
     </div>
@@ -1423,6 +1430,8 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   var countEl=document.getElementById("searchCount");
   var nextBtn=document.getElementById("nextBtn");
   var prevBtn=document.getElementById("prevBtn");
+  var fontIncBtn=document.getElementById("fontIncBtn");
+  var fontDecBtn=document.getElementById("fontDecBtn");
   var darkBtn=document.getElementById("darkBtn");
   var tocToggle=document.getElementById("tocToggle");
   var tocDrawer=document.getElementById("tocDrawer");
@@ -1434,6 +1443,25 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   darkBtn.addEventListener("click",function(){
     document.body.classList.toggle("dark");
     localStorage.setItem("theme",document.body.classList.contains("dark")?"dark":"light");
+  });
+
+  var currentFontSize = parseFloat(localStorage.getItem("fontSize")) || 100;
+  document.documentElement.style.fontSize = currentFontSize + "%";
+
+  fontIncBtn.addEventListener("click", function(){
+    if(currentFontSize < 150) {
+      currentFontSize += 10;
+      document.documentElement.style.fontSize = currentFontSize + "%";
+      localStorage.setItem("fontSize", currentFontSize);
+    }
+  });
+
+  fontDecBtn.addEventListener("click", function(){
+    if(currentFontSize > 80) {
+      currentFontSize -= 10;
+      document.documentElement.style.fontSize = currentFontSize + "%";
+      localStorage.setItem("fontSize", currentFontSize);
+    }
   });
 
   tocToggle.addEventListener("click",function(){tocDrawer.classList.toggle("open");});
@@ -1474,6 +1502,16 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   scrollTopBtn.addEventListener("click", function(){
     reader.scrollTo({top: 0, behavior: "smooth"});
   });
+
+  if('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').then(function(registration) {
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
 
   navLinks.forEach(function(l){
     l.addEventListener("click",function(e){
