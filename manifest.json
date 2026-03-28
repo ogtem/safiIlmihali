@@ -1,0 +1,21 @@
+{
+  "name": "Şâfiî Cep İlmihâli",
+  "short_name": "İlmihâl",
+  "description": "Gülmehmet Ögtem'in Şâfiî Cep İlmihali ve Tam Namaz Hocası",
+  "start_url": "./risale_final.html",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#a06830",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2EwNjgzMCIgLz48dGV4dCB4PSI1MCUiIHk9IjY1JSIgZm9udC1zaXplPSIyMDAiIGZpbGw9IiNmNWYwZTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzZXJpZiI+xZ48L3RleHQ+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iI2EwNjgzMCIgLz48dGV4dCB4PSI1MCUiIHk9IjY1JSIgZm9udC1zaXplPSIyMDAiIGZpbGw9IiNmNWYwZTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzZXJpZiI+xZ48L3RleHQ+PC9zdmc+",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
