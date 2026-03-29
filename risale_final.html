@@ -1951,6 +1951,19 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
      }
   });
 
+
+  function adjustLayoutPadding() {
+    var nav = document.querySelector('nav');
+    var layout = document.querySelector('.layout');
+    if (nav && layout) {
+      layout.style.paddingTop = nav.offsetHeight + 'px';
+    }
+  }
+  window.addEventListener('resize', adjustLayoutPadding);
+  window.addEventListener('DOMContentLoaded', adjustLayoutPadding);
+  window.addEventListener('orientationchange', function() { setTimeout(adjustLayoutPadding, 100); });
+  adjustLayoutPadding();
+
 })();
 </script>
 </body>
