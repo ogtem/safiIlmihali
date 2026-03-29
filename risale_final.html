@@ -93,7 +93,18 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
 .hl-item-date{font-size:0.75rem;color:var(--text2);margin-top:8px;text-align:right}
 .no-highlights{text-align:center;color:var(--text2);font-style:italic;padding:20px 0}
 
-@media(max-width:700px){aside{display:none}.book-content{padding:32px 18px 60px}#scrollTopBtn{bottom:16px;right:16px;width:38px;height:38px;font-size:1.2rem}}
+@media(max-width:700px){
+  aside{display:none}
+  .book-content{padding:32px 18px 60px}
+  #scrollTopBtn{bottom:16px;right:16px;width:38px;height:38px;font-size:1.2rem}
+  .nav-top{padding:0 12px;height:auto;min-height:56px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+  .brand{font-size:0.75rem;width:100%;text-align:center;margin-bottom:6px}
+  .nav-controls{justify-content:center;flex-wrap:wrap;gap:6px}
+  .search-wrap{max-width:100%;flex-basis:100%;margin-bottom:4px}
+}
+@media(max-width:400px){
+  .icon-btn{width:32px;height:32px;font-size:0.9rem;}
+}
 @media(min-width:701px){.toc-toggle{display:none!important}.toc-drawer{display:none!important}}
 </style>
 </head>
