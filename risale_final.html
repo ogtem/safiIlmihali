@@ -1583,7 +1583,7 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
 
   var results = [], idx = -1;
 
-  function clearMarks(){
+    function clearMarks(){
     document.querySelectorAll("mark.search-highlight").forEach(function(el){
       var p = el.parentNode;
       p.replaceChild(document.createTextNode(el.textContent), el);
@@ -1592,6 +1592,7 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     results = [];
     idx = -1;
     countEl.textContent = "";
+    restoreHighlights();
   }
 
   function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
@@ -1749,58 +1750,70 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     return Math.random().toString(36).substring(2, 9);
   }
 
-  // Restore highlights on load (basic text matching, robust enough for static content)
-  function restoreHighlights() {
-    var contentDiv = document.querySelector(".book-content");
-    if(!contentDiv) return;
-
-    // Reverse sort by length so larger highlights get applied first if there are overlaps
-    var sortedHL = highlights.slice().sort(function(a,b) { return b.text.length - a.text.length; });
-
-    sortedHL.forEach(function(hl) {
-       var re = new RegExp(esc(hl.text), "i");
-       highlightNodeUser(contentDiv, re, hl.id);
-    });
+    // Helper to find absolute character offset of a node within a container
+  function getAbsoluteOffset(container, node, localOffset) {
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    var offset = 0;
+    while(n = walker.nextNode()) {
+      if(n === node) return offset + localOffset;
+      offset += n.nodeValue.length;
+    }
+    return offset;
   }
 
-  function highlightNodeUser(node, regex, id) {
-    if (node.nodeType === 3) {
-      var match = regex.exec(node.nodeValue);
-      if (match && node.parentNode && !node.parentNode.classList.contains("user-highlight") && !node.parentNode.classList.contains("search-highlight")) {
+  // Helper to find a text node and local offset given an absolute offset
+  function getNodeByOffset(container, absoluteOffset) {
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    var offset = 0;
+    while(n = walker.nextNode()) {
+      if(offset + n.nodeValue.length > absoluteOffset || (n.nodeValue.length === 0 && offset === absoluteOffset)) {
+        return { node: n, offset: absoluteOffset - offset };
+      }
+      offset += n.nodeValue.length;
+    }
+    // If it's at the very end
+    if(offset === absoluteOffset && walker.currentNode) {
+      return { node: walker.currentNode, offset: walker.currentNode.nodeValue.length };
+    }
+    return null;
+  }
+
+  function restoreHighlights() {
+    var sortedHL = highlights.slice().sort(function(a,b) { return (b.length || 0) - (a.length || 0); });
+    sortedHL.forEach(function(hl) {
+      if(hl.si == null) return; // ignore old formats
+      var container = document.querySelector('[data-si="'+hl.si+'"]');
+      if(!container) return;
+
+      var startPos = getNodeByOffset(container, hl.start);
+      var endPos = getNodeByOffset(container, hl.start + hl.length);
+
+      if(!startPos || !endPos) return;
+
+      var range = document.createRange();
+      try {
+        range.setStart(startPos.node, startPos.offset);
+        range.setEnd(endPos.node, endPos.offset);
+
         var mark = document.createElement('mark');
         mark.className = 'user-highlight';
-        mark.setAttribute('data-hl-id', id);
-
-        // Add click listener to delete highlighting
+        mark.setAttribute('data-hl-id', hl.id);
         mark.addEventListener('click', function(e) {
            if(confirm("Bu vurguyu silmek istiyor musunuz?")) {
               var p = mark.parentNode;
               p.replaceChild(document.createTextNode(mark.textContent), mark);
               p.normalize();
-              highlights = highlights.filter(function(h) { return h.id !== id; });
+              highlights = highlights.filter(function(h) { return h.id !== hl.id; });
               saveHighlights();
-              // In step 3 we will also refresh the sidebar list here
            }
         });
-
-        var wordNode = node.splitText(match.index);
-        wordNode.splitText(match[0].length);
-        var clone = wordNode.cloneNode(true);
-        mark.appendChild(clone);
-        wordNode.parentNode.replaceChild(mark, wordNode);
-        return 1;
+        range.surroundContents(mark);
+      } catch(e) {
+        // Range crosses element boundaries, simple highlight won't work on restore without complex logic.
       }
-    } else if (node.nodeType === 1 && node.childNodes && !/(script|style|mark)/i.test(node.tagName)) {
-      var child = node.firstChild;
-      while (child) {
-        var next = child.nextSibling;
-        if (highlightNodeUser(child, regex, id)) {
-           next = child.nextSibling ? child.nextSibling.nextSibling : null;
-        }
-        child = next;
-      }
-    }
-    return 0;
+    });
   }
 
   // Delay restoration slightly to ensure DOM is ready
@@ -1843,7 +1856,7 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     e.preventDefault(); // prevent selection from clearing
   });
 
-  tooltip.addEventListener("click", function(e) {
+    tooltip.addEventListener("click", function(e) {
     e.preventDefault();
     e.stopPropagation();
     if(!currentSelectionRange) return;
@@ -1855,25 +1868,56 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
       return;
     }
 
+    var range = currentSelectionRange;
+    var container = range.commonAncestorContainer;
+    while(container && container.nodeType !== 1) {
+      container = container.parentNode;
+    }
+    while(container && (!container.hasAttribute || !container.hasAttribute('data-si'))) {
+      container = container.parentNode;
+    }
+
+    if(!container) {
+      alert("Sadece kitap içindeki metinleri vurgulayabilirsiniz.");
+      sel.removeAllRanges();
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    var startAbsolute = getAbsoluteOffset(container, range.startContainer, range.startOffset);
+    var hlLength = text.length;
+    var newId = generateId();
+
     var newHl = {
-      id: generateId(),
+      id: newId,
+      si: container.getAttribute('data-si'),
+      start: startAbsolute,
+      length: hlLength,
       text: text,
       timestamp: Date.now()
     };
 
-    // Apply highlight immediately
-    var contentDiv = document.querySelector(".book-content");
-    var re = new RegExp(esc(text), "i");
-    var found = highlightNodeUser(contentDiv, re, newHl.id);
+    var mark = document.createElement('mark');
+    mark.className = 'user-highlight';
+    mark.setAttribute('data-hl-id', newId);
+    mark.addEventListener('click', function(ev) {
+       if(confirm("Bu vurguyu silmek istiyor musunuz?")) {
+          var p = mark.parentNode;
+          p.replaceChild(document.createTextNode(mark.textContent), mark);
+          p.normalize();
+          highlights = highlights.filter(function(h) { return h.id !== newId; });
+          saveHighlights();
+       }
+    });
 
-    if (found || document.querySelector('mark[data-hl-id="'+newHl.id+'"]')) {
+    try {
+      range.surroundContents(mark);
       highlights.push(newHl);
       saveHighlights();
-    } else {
-      alert("Seçim çok uzun veya farklı paragrafları kapsıyor. Lütfen parça parça vurgulayın.");
+    } catch(err) {
+      alert("Karmaşık bir metin seçtiniz. Lütfen tek paragraf içinden seçim yapın.");
     }
 
-    // Clear selection and hide tooltip
     sel.removeAllRanges();
     tooltip.style.display = 'none';
     currentSelectionRange = null;
