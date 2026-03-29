@@ -93,8 +93,45 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
 .hl-item-date{font-size:0.75rem;color:var(--text2);margin-top:8px;text-align:right}
 .no-highlights{text-align:center;color:var(--text2);font-style:italic;padding:20px 0}
 
-@media(max-width:700px){
-  aside{display:none}
+@media(max-width:700px) {
+  aside { display:none; }
+  .book-content { padding:32px 18px 60px; }
+  #scrollTopBtn { bottom:16px; right:16px; width:38px; height:38px; font-size:1.2rem; }
+
+  /* --- Yeni Mobil Navbar Düzenlemeleri --- */
+  nav {
+    padding-bottom: 8px; /* Navbar'in alt kismina nefes aldirir */
+  }
+  .nav-top {
+    height: auto;
+    flex-wrap: wrap; /* Icerik sigmadiginda alt satira tasimasina izin verir */
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .brand {
+    flex: 100%; /* Marka ismini tek basina ilk satira yerlestirir */
+    text-align: center; /* Mobilde ortali durmasi sik durur */
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+  }
+  .nav-controls {
+    flex: 100%; /* Buton grubunu ve arama cubugunu alt satira iter */
+    flex-wrap: wrap;
+    justify-content: center; /* Butonlari merkeze hizalar */
+    gap: 6px;
+  }
+  .search-wrap {
+    flex: 100%; /* Arama cubugunu tek basina ayri bir satir (orta satir) yapar */
+    max-width: 100%;
+    order: -1; /* Arama cubugunu butonlarin hemen ustune alir */
+    margin-bottom: 4px;
+  }
+  .icon-btn {
+    width: 36px; /* Dokunmatik ekranlar icin ideal parmak boyutu */
+    height: 36px;
+    font-size: 1rem;
+  }
+}
   .book-content{padding:32px 18px 60px}
   #scrollTopBtn{bottom:16px;right:16px;width:38px;height:38px;font-size:1.2rem}
   .nav-top{padding:0 12px;height:auto;min-height:56px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
