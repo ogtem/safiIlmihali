@@ -1581,7 +1581,14 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     });
   });
 
-  var results = [], idx = -1;
+
+
+  var results=[],idx=-1,originals={};
+  document.querySelectorAll("p,li,h2,h3,h4").forEach(function(el,i){
+    el.setAttribute('data-si', i);
+    originals[i]=el.innerHTML;
+  });
+
 
     function clearMarks(){
     document.querySelectorAll("mark.search-highlight").forEach(function(el){
@@ -1856,7 +1863,7 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     e.preventDefault(); // prevent selection from clearing
   });
 
-    tooltip.addEventListener("click", function(e) {
+        tooltip.addEventListener("click", function(e) {
     e.preventDefault();
     e.stopPropagation();
     if(!currentSelectionRange) return;
@@ -1869,19 +1876,29 @@ mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
     }
 
     var range = currentSelectionRange;
-    var container = range.commonAncestorContainer;
-    while(container && container.nodeType !== 1) {
-      container = container.parentNode;
-    }
-    while(container && (!container.hasAttribute || !container.hasAttribute('data-si'))) {
-      container = container.parentNode;
+    var node = range.commonAncestorContainer;
+
+    // Ensure node is an element
+    while(node && node.nodeType !== 1) {
+       node = node.parentNode;
     }
 
-    if(!container) {
-      alert("Sadece kitap içindeki metinleri vurgulayabilirsiniz.");
-      sel.removeAllRanges();
-      tooltip.style.display = 'none';
-      return;
+    // Find closest data-si ancestor
+    var container = null;
+    if (node && node.closest) {
+       container = node.closest('[data-si]');
+    }
+
+        if(!container) {
+       if(node && node.querySelector && node.querySelector('[data-si]')) {
+           alert("Lütfen tek bir paragraf veya liste öğesi içinden seçim yapın.");
+       } else {
+           alert("Sadece kitap içindeki metinleri vurgulayabilirsiniz. " + (node ? node.tagName + " " + node.className : "null node"));
+       }
+       sel.removeAllRanges();
+       tooltip.style.display = 'none';
+       currentSelectionRange = null;
+       return;
     }
 
     var startAbsolute = getAbsoluteOffset(container, range.startContainer, range.startOffset);
