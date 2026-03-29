@@ -25,6 +25,7 @@
   --accent:#7a4f28;--accent2:#a06830;
   --border:rgba(90,60,30,0.18);--nav-bg:rgba(245,240,232,0.96);
   --mark-bg:rgba(160,104,48,0.28);--mark-current:rgba(160,104,48,0.65);
+  --user-mark-bg:rgba(255,215,0,0.4);
   --font-serif:"EB Garamond",Georgia,serif;
   --font-display:"Cinzel",serif;
 }
@@ -34,6 +35,7 @@
   --accent:#c49a6c;--accent2:#d4a373;
   --border:rgba(196,154,108,0.2);--nav-bg:rgba(18,18,18,0.95);
   --mark-bg:rgba(196,154,108,0.30);--mark-current:rgba(196,154,108,0.70);
+  --user-mark-bg:rgba(218,165,32,0.4);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--font-serif);background:var(--bg);color:var(--text);-webkit-text-size-adjust:100%;transition:background 0.3s,color 0.3s}
@@ -73,9 +75,24 @@ p.ar-block{font-family:"Amiri","Scheherazade New","Traditional Arabic",serif;fon
 span.ar{font-family:"Amiri","Scheherazade New","Traditional Arabic",serif;font-size:1.2em;unicode-bidi:embed;direction:rtl}
 mark{background:var(--mark-bg);color:var(--text);border-radius:2px;padding:0 1px}
 mark.current-result{background:var(--mark-current);outline:2px solid var(--accent);outline-offset:1px}
+mark.user-highlight{background:var(--user-mark-bg); cursor:pointer;}
 #scrollTopBtn{position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--bg2);color:var(--accent);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;opacity:0;visibility:hidden;transition:all 0.3s ease;z-index:99;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
 #scrollTopBtn.visible{opacity:1;visibility:visible}
 #scrollTopBtn:hover{background:var(--accent);color:var(--bg)}
+#highlightTooltip{position:absolute;display:none;background:var(--text);color:var(--bg);padding:6px 12px;border-radius:6px;font-size:0.9rem;font-family:var(--font-serif);cursor:pointer;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.2);transform:translate(-50%,-100%);margin-top:-10px;}
+#highlightTooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border-width:6px;border-style:solid;border-color:var(--text) transparent transparent transparent;}
+
+.modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.modal.open{display:flex}
+.modal-content{background:var(--nav-bg);border:1px solid var(--border);border-radius:8px;width:100%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,0.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+#highlightsList{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.hl-item{background:var(--bg2);padding:12px;border-radius:6px;border-left:4px solid var(--accent);cursor:pointer;transition:background 0.2s}
+.hl-item:hover{background:var(--bg3)}
+.hl-item-text{font-family:var(--font-serif);font-size:1rem;color:var(--text);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hl-item-date{font-size:0.75rem;color:var(--text2);margin-top:8px;text-align:right}
+.no-highlights{text-align:center;color:var(--text2);font-style:italic;padding:20px 0}
+
 @media(max-width:700px){aside{display:none}.book-content{padding:32px 18px 60px}#scrollTopBtn{bottom:16px;right:16px;width:38px;height:38px;font-size:1.2rem}}
 @media(min-width:701px){.toc-toggle{display:none!important}.toc-drawer{display:none!important}}
 </style>
@@ -93,6 +110,8 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
       <button class="icon-btn" id="nextBtn" aria-label="Sonraki">↓</button>
       <button class="icon-btn" id="fontDecBtn" aria-label="Küçült" style="font-size:0.85rem">A-</button>
       <button class="icon-btn" id="fontIncBtn" aria-label="Büyüt">A+</button>
+      <button class="icon-btn" id="fullscreenBtn" aria-label="Tam Ekran" style="font-size:1.1rem; padding-bottom:3px">⛶</button>
+      <button class="icon-btn" id="highlightsBtn" aria-label="Vurgularım" style="font-size:1.1rem;">🔖</button>
       <button class="icon-btn toc-toggle" id="tocToggle" aria-label="İçindekiler">☰</button>
       <button class="icon-btn" id="darkBtn" aria-label="Tema">◑</button>
     </div>
@@ -1422,6 +1441,18 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   </main>
 </div>
 <button id="scrollTopBtn" aria-label="Yukarı Çık">&#x2191;</button>
+<div id="highlightTooltip">Vurgula</div>
+
+<div id="highlightsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hlModalTitle">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="hlModalTitle" style="font-family: var(--font-display); color: var(--accent); font-size:1.2rem;">Vurgularım</h2>
+      <button id="closeHighlightsBtn" style="background:transparent; border:none; font-size:1.5rem; color:var(--text); cursor:pointer;">&times;</button>
+    </div>
+    <div id="highlightsList"></div>
+  </div>
+</div>
+
 <script>
 (function(){
   var reader=document.getElementById("reader");
@@ -1433,11 +1464,17 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
   var fontIncBtn=document.getElementById("fontIncBtn");
   var fontDecBtn=document.getElementById("fontDecBtn");
   var darkBtn=document.getElementById("darkBtn");
+  var fullscreenBtn=document.getElementById("fullscreenBtn");
   var tocToggle=document.getElementById("tocToggle");
   var tocDrawer=document.getElementById("tocDrawer");
   var scrollTopBtn=document.getElementById("scrollTopBtn");
+  var highlightsBtn=document.getElementById("highlightsBtn");
+  var highlightsModal=document.getElementById("highlightsModal");
+  var closeHighlightsBtn=document.getElementById("closeHighlightsBtn");
+  var highlightsList=document.getElementById("highlightsList");
   var headings=document.querySelectorAll("h2[id],h3[id]");
   var navLinks=document.querySelectorAll("aside a,#tocDrawer a");
+  var tooltip = document.getElementById("highlightTooltip");
 
   if(localStorage.getItem("theme")==="dark") document.body.classList.add("dark");
   darkBtn.addEventListener("click",function(){
@@ -1463,6 +1500,26 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
       localStorage.setItem("fontSize", currentFontSize);
     }
   });
+
+  if(fullscreenBtn) {
+    fullscreenBtn.addEventListener("click", function(){
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function(err){});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    document.addEventListener("fullscreenchange", function() {
+      if (document.fullscreenElement) {
+        fullscreenBtn.innerHTML = "🗗";
+      } else {
+        fullscreenBtn.innerHTML = "⛶";
+      }
+    });
+  }
 
   tocToggle.addEventListener("click",function(){tocDrawer.classList.toggle("open");});
   document.addEventListener("click",function(e){
@@ -1524,9 +1581,16 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
     });
   });
 
-  var results = [], idx = -1;
 
-  function clearMarks(){
+
+  var results=[],idx=-1,originals={};
+  document.querySelectorAll("p,li,h2,h3,h4").forEach(function(el,i){
+    el.setAttribute('data-si', i);
+    originals[i]=el.innerHTML;
+  });
+
+
+    function clearMarks(){
     document.querySelectorAll("mark.search-highlight").forEach(function(el){
       var p = el.parentNode;
       p.replaceChild(document.createTextNode(el.textContent), el);
@@ -1535,6 +1599,7 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
     results = [];
     idx = -1;
     countEl.textContent = "";
+    restoreHighlights();
   }
 
   function esc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
@@ -1594,6 +1659,311 @@ mark.current-result{background:var(--mark-current);outline:2px solid var(--accen
     if(e.key==="Enter"){e.preventDefault();goTo(e.shiftKey?idx-1:idx+1);}
     if(e.key==="Escape"){clearMarks();input.value="";}
   });
+
+  // HIGHLIGHT FEATURE
+  var highlights = JSON.parse(localStorage.getItem("userHighlights") || "[]");
+
+  function renderHighlightsList() {
+    if(!highlightsList) return;
+    highlightsList.innerHTML = "";
+    if(highlights.length === 0) {
+      highlightsList.innerHTML = '<div class="no-highlights">Henüz vurgulanmış bir metin yok.</div>';
+      return;
+    }
+    // Reverse to show newest first
+    var sorted = highlights.slice().sort(function(a,b){return (b.timestamp||0) - (a.timestamp||0)});
+    sorted.forEach(function(hl) {
+      var div = document.createElement("div");
+      div.className = "hl-item";
+
+      var textDiv = document.createElement("div");
+      textDiv.className = "hl-item-text";
+      textDiv.textContent = hl.text;
+
+      var dateDiv = document.createElement("div");
+      dateDiv.className = "hl-item-date";
+      if(hl.timestamp) {
+        var d = new Date(hl.timestamp);
+        dateDiv.textContent = d.toLocaleDateString("tr-TR") + " " + d.toLocaleTimeString("tr-TR", {hour: '2-digit', minute:'2-digit'});
+      }
+
+      var deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Sil";
+      deleteBtn.style.cssText = "background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.85rem;text-decoration:underline;padding:0;margin-top:8px;";
+      deleteBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if(confirm("Bu vurguyu silmek istiyor musunuz?")) {
+          var marks = document.querySelectorAll('mark[data-hl-id="'+hl.id+'"]');
+          marks.forEach(function(m) {
+            var p = m.parentNode;
+            p.replaceChild(document.createTextNode(m.textContent), m);
+            p.normalize();
+          });
+          highlights = highlights.filter(function(h) { return h.id !== hl.id; });
+          saveHighlights();
+        }
+      });
+
+      var bottomRow = document.createElement("div");
+      bottomRow.style.display = "flex";
+      bottomRow.style.justifyContent = "space-between";
+      bottomRow.style.alignItems = "center";
+      bottomRow.appendChild(deleteBtn);
+      if(hl.timestamp) bottomRow.appendChild(dateDiv);
+
+      div.appendChild(textDiv);
+      div.appendChild(bottomRow);
+
+      div.addEventListener("click", function() {
+        var el = document.querySelector('mark[data-hl-id="'+hl.id+'"]');
+        if(el) {
+          el.scrollIntoView({behavior: "smooth", block: "center"});
+          highlightsModal.classList.remove("open");
+        } else {
+          // If node doesn't exist, just scroll to body
+          window.scrollTo(0,0);
+        }
+      });
+
+      highlightsList.appendChild(div);
+    });
+  }
+
+  function saveHighlights() {
+    localStorage.setItem("userHighlights", JSON.stringify(highlights));
+    if(highlightsModal && highlightsModal.classList.contains("open")) {
+      renderHighlightsList();
+    }
+  }
+
+  if(highlightsBtn) {
+    highlightsBtn.addEventListener("click", function() {
+      renderHighlightsList();
+      highlightsModal.classList.add("open");
+    });
+  }
+  if(closeHighlightsBtn) {
+    closeHighlightsBtn.addEventListener("click", function() {
+      highlightsModal.classList.remove("open");
+    });
+  }
+  window.addEventListener("click", function(e) {
+    if(highlightsModal && e.target === highlightsModal) {
+      highlightsModal.classList.remove("open");
+    }
+  });
+
+  function generateId() {
+    return Math.random().toString(36).substring(2, 9);
+  }
+
+    // Helper to find absolute character offset of a node within a container
+  function getAbsoluteOffset(container, node, localOffset) {
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    var offset = 0;
+    while(n = walker.nextNode()) {
+      if(n === node) return offset + localOffset;
+      offset += n.nodeValue.length;
+    }
+    return offset;
+  }
+
+  // Helper to find a text node and local offset given an absolute offset
+  function getNodeByOffset(container, absoluteOffset) {
+    var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    var offset = 0;
+    while(n = walker.nextNode()) {
+      if(offset + n.nodeValue.length > absoluteOffset || (n.nodeValue.length === 0 && offset === absoluteOffset)) {
+        return { node: n, offset: absoluteOffset - offset };
+      }
+      offset += n.nodeValue.length;
+    }
+    // If it's at the very end
+    if(offset === absoluteOffset && walker.currentNode) {
+      return { node: walker.currentNode, offset: walker.currentNode.nodeValue.length };
+    }
+    return null;
+  }
+
+  function restoreHighlights() {
+    var sortedHL = highlights.slice().sort(function(a,b) { return (b.length || 0) - (a.length || 0); });
+    sortedHL.forEach(function(hl) {
+      if(hl.si == null) return; // ignore old formats
+      var container = document.querySelector('[data-si="'+hl.si+'"]');
+      if(!container) return;
+
+      var startPos = getNodeByOffset(container, hl.start);
+      var endPos = getNodeByOffset(container, hl.start + hl.length);
+
+      if(!startPos || !endPos) return;
+
+      var range = document.createRange();
+      try {
+        range.setStart(startPos.node, startPos.offset);
+        range.setEnd(endPos.node, endPos.offset);
+
+        var mark = document.createElement('mark');
+        mark.className = 'user-highlight';
+        mark.setAttribute('data-hl-id', hl.id);
+        mark.addEventListener('click', function(e) {
+           if(confirm("Bu vurguyu silmek istiyor musunuz?")) {
+              var p = mark.parentNode;
+              p.replaceChild(document.createTextNode(mark.textContent), mark);
+              p.normalize();
+              highlights = highlights.filter(function(h) { return h.id !== hl.id; });
+              saveHighlights();
+           }
+        });
+        range.surroundContents(mark);
+      } catch(e) {
+        // Range crosses element boundaries, simple highlight won't work on restore without complex logic.
+      }
+    });
+  }
+
+  // Delay restoration slightly to ensure DOM is ready
+  setTimeout(restoreHighlights, 100);
+
+  var currentSelectionRange = null;
+
+  document.addEventListener("selectionchange", function() {
+    var sel = window.getSelection();
+    if(sel.isCollapsed || sel.toString().trim().length === 0) {
+      tooltip.style.display = 'none';
+      currentSelectionRange = null;
+      return;
+    }
+
+    // Check if selection is within the book content
+    var node = sel.anchorNode;
+    var inBook = false;
+    while(node) {
+       if(node.classList && node.classList.contains("book-content")) { inBook = true; break; }
+       node = node.parentNode;
+    }
+    if(!inBook) {
+      tooltip.style.display = 'none';
+      currentSelectionRange = null;
+      return;
+    }
+
+    currentSelectionRange = sel.getRangeAt(0);
+    var rect = currentSelectionRange.getBoundingClientRect();
+
+    // Position tooltip above the selection
+    tooltip.style.display = 'block';
+    tooltip.style.left = (rect.left + rect.width / 2 + window.scrollX) + 'px';
+    tooltip.style.top = (rect.top + window.scrollY - 5) + 'px';
+  });
+
+  // Force mousedown to act as a click on tooltip, bypassing blur
+  tooltip.addEventListener("mousedown", function(e) {
+    e.preventDefault(); // prevent selection from clearing
+  });
+
+        tooltip.addEventListener("click", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if(!currentSelectionRange) return;
+
+    var sel = window.getSelection();
+    var text = sel.toString().trim();
+    if(!text) {
+      tooltip.style.display = 'none';
+      return;
+    }
+
+    var range = currentSelectionRange;
+    var node = range.commonAncestorContainer;
+
+    // Ensure node is an element
+    while(node && node.nodeType !== 1) {
+       node = node.parentNode;
+    }
+
+    // Find closest data-si ancestor
+    var container = null;
+    if (node && node.closest) {
+       container = node.closest('[data-si]');
+    }
+
+        if(!container) {
+       if(node && node.querySelector && node.querySelector('[data-si]')) {
+           alert("Lütfen tek bir paragraf veya liste öğesi içinden seçim yapın.");
+       } else {
+           alert("Sadece kitap içindeki metinleri vurgulayabilirsiniz. " + (node ? node.tagName + " " + node.className : "null node"));
+       }
+       sel.removeAllRanges();
+       tooltip.style.display = 'none';
+       currentSelectionRange = null;
+       return;
+    }
+
+    var startAbsolute = getAbsoluteOffset(container, range.startContainer, range.startOffset);
+    var hlLength = text.length;
+    var newId = generateId();
+
+    var newHl = {
+      id: newId,
+      si: container.getAttribute('data-si'),
+      start: startAbsolute,
+      length: hlLength,
+      text: text,
+      timestamp: Date.now()
+    };
+
+    var mark = document.createElement('mark');
+    mark.className = 'user-highlight';
+    mark.setAttribute('data-hl-id', newId);
+    mark.addEventListener('click', function(ev) {
+       if(confirm("Bu vurguyu silmek istiyor musunuz?")) {
+          var p = mark.parentNode;
+          p.replaceChild(document.createTextNode(mark.textContent), mark);
+          p.normalize();
+          highlights = highlights.filter(function(h) { return h.id !== newId; });
+          saveHighlights();
+       }
+    });
+
+    try {
+      range.surroundContents(mark);
+      highlights.push(newHl);
+      saveHighlights();
+    } catch(err) {
+      alert("Karmaşık bir metin seçtiniz. Lütfen tek paragraf içinden seçim yapın.");
+    }
+
+    sel.removeAllRanges();
+    tooltip.style.display = 'none';
+    currentSelectionRange = null;
+  });
+
+  // Hide tooltip when clicking elsewhere
+  document.addEventListener("mousedown", function(e) {
+     if(e.target !== tooltip && tooltip.style.display === 'block') {
+         // allow click to process selection changes first
+         setTimeout(function(){
+            var sel = window.getSelection();
+            if(sel.isCollapsed) tooltip.style.display = 'none';
+         }, 10);
+     }
+  });
+
+
+  function adjustLayoutPadding() {
+    var nav = document.querySelector('nav');
+    var layout = document.querySelector('.layout');
+    if (nav && layout) {
+      layout.style.paddingTop = nav.offsetHeight + 'px';
+    }
+  }
+  window.addEventListener('resize', adjustLayoutPadding);
+  window.addEventListener('DOMContentLoaded', adjustLayoutPadding);
+  window.addEventListener('orientationchange', function() { setTimeout(adjustLayoutPadding, 100); });
+  adjustLayoutPadding();
+
 })();
 </script>
 </body>
